@@ -27,3 +27,6 @@ opentelemetry-sdk
 opentelemetry-instrumentation-fastapi
 structlog
 sentry-sdk
+
+# linter 
+flake8
