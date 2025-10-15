@@ -2,6 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
-  @apply font-sans;
+.nav-link {
+  @apply text-text dark:text-dark-text hover:text-accent dark:hover:text-dark-accent px-4 transition-colors duration-200;
 }

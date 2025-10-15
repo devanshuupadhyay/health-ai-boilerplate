@@ -1,18 +1,21 @@
 <template>
-  <nav class="bg-primary text-text p-4 shadow-lg">
+  <nav class="bg-primary dark:bg-dark-primary text-text dark:text-dark-text p-4 shadow-lg transition-colors duration-200">
     <div class="container mx-auto flex items-center justify-between">
       <NuxtLink to="/" class="text-xl font-bold nav-link">
         Clinical Note AI
       </NuxtLink>
-      <div class="flex items-center space-x-4 divide-x divide-secondary">
+      <div class="flex items-center space-x-4 divide-x divide-secondary dark:divide-dark-secondary">
         <NuxtLink to="/" class="nav-link">Dashboard</NuxtLink>
         <div v-if="authStore.isLoggedIn" class="flex items-center space-x-2 px-4">
           <span class="text-sm">Welcome, {{ authStore.user?.name || 'User' }}</span>
-          <button @click="handleLogout" class="bg-accent hover:bg-blue-700 text-white font-bold py-1 px-3 rounded-md text-sm focus:outline-none">
+          <button @click="handleLogout" class="bg-accent dark:bg-dark-accent hover:bg-blue-700 text-white font-bold py-1 px-3 rounded-md text-sm focus:outline-none">
             Logout
           </button>
         </div>
         <NuxtLink v-else to="/login" class="nav-link">Login</NuxtLink>
+        <div class="pl-4">
+            <ThemeSwitcher />
+        </div>
       </div>
     </div>
   </nav>
