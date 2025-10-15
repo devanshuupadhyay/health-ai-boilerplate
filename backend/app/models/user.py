@@ -4,6 +4,7 @@ from sqlalchemy import Boolean, Column, Integer, String
 
 from app.db.session import Base
 
+
 class User(Base):
     __tablename__ = "users"
 

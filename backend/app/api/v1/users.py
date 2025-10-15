@@ -8,6 +8,7 @@ from app.api import deps
 
 router = APIRouter()
 
+
 @router.post("/", response_model=schemas.user.User)
 def create_new_user(
     *,

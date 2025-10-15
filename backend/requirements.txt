@@ -30,3 +30,6 @@ sentry-sdk
 
 # linter 
 flake8
+
+# Pre-commit hooks
+pre-commit

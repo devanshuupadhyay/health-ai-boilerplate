@@ -2,6 +2,7 @@
 
 from pydantic import BaseModel, EmailStr
 
+
 # Shared properties that all user-related schemas will have.
 class UserBase(BaseModel):
     email: EmailStr

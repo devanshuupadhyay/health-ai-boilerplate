@@ -2,6 +2,7 @@
 
 from pydantic_settings import BaseSettings
 
+
 class Settings(BaseSettings):
     # Variables that will be read from the .env file
     DATABASE_URL: str
@@ -14,6 +15,7 @@ class Settings(BaseSettings):
     class Config:
         # This tells pydantic to look for a file named .env
         env_file = ".env"
+
 
 # Create a single, importable instance of the settings
 settings = Settings()
