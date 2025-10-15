@@ -2,6 +2,7 @@
 
 from fastapi import FastAPI
 from app.api.v1 import users  # Import the users router
+from app.core.config import settings
 
 app = FastAPI(title="Health AI Boilerplate API")
 
@@ -13,3 +14,8 @@ def read_root():
 
 # Include the router
 app.include_router(users.router, prefix="/api/v1/users", tags=["users"])
+
+
+@app.get("/debug-config")
+def debug_config():
+    return {"database_url": settings.DATABASE_URL}

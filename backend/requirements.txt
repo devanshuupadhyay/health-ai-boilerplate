@@ -33,3 +33,5 @@ flake8
 
 # Pre-commit hooks
 pre-commit
+
+bcrypt==3.2.0
