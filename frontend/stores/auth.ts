@@ -1,11 +1,11 @@
 // path: frontend/stores/auth.ts
 
-import { defineStore } from 'pinia';
+import { defineStore } from 'pinia'
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
     token: null as string | null,
-    user: null as any | null,
+    user: null as { email: string; name: string } | null,
   }),
   getters: {
     isLoggedIn: (state) => !!state.token,
@@ -22,25 +22,25 @@ export const useAuthStore = defineStore('auth', {
             username: email,
             password: password,
           }),
-        });
+        })
 
         if (response.ok) {
-          const data = await response.json();
-          this.token = data.access_token;
-          this.user = { email: email };
-          return true; // Return success status
+          const data = await response.json()
+          this.token = data.access_token
+          this.user = { email: email, name: 'Dr. Smith' }
+          return true
         } else {
-          console.error('Login failed:', await response.json());
-          return false; // Return failure status
+          console.error('Login failed:', await response.json())
+          return false
         }
       } catch (error) {
-        console.error('API call failed:', error);
-        return false; // Return failure status
+        console.error('API call failed:', error)
+        return false
       }
     },
     logout() {
-      this.token = null;
-      this.user = null;
+      this.token = null
+      this.user = null
     },
   },
-});
+})
