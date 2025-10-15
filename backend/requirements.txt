@@ -1,0 +1,29 @@
+# Web Framework
+fastapi
+uvicorn[standard]
+
+# Database & ORM
+SQLAlchemy
+alembic
+psycopg2-binary
+
+# Data Validation & Settings
+pydantic
+pydantic-settings
+pydantic[email]
+
+# Security & Authentication
+passlib[bcrypt]
+python-jose[cryptography]
+Authlib
+
+# Asynchronous Tasks
+celery
+redis
+
+# Observability
+opentelemetry-api
+opentelemetry-sdk
+opentelemetry-instrumentation-fastapi
+structlog
+sentry-sdk
