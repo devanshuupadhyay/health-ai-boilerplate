@@ -16,6 +16,7 @@ pydantic[email]
 passlib[bcrypt]
 python-jose[cryptography]
 Authlib
+python-multipart
 
 # Asynchronous Tasks
 celery

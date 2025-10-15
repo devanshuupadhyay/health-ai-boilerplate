@@ -37,12 +37,17 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { useAuthStore } from '~/stores/auth';
+import { useRouter } from 'vue-router';
 
 const email = ref('');
 const password = ref('');
 const authStore = useAuthStore();
+const router = useRouter(); // Use useRouter in the component
 
-const handleLogin = () => {
-  authStore.login(email.value, password.value);
+const handleLogin = async () => {
+  const success = await authStore.login(email.value, password.value);
+  if (success) {
+    router.push('/');
+  }
 };
 </script>
