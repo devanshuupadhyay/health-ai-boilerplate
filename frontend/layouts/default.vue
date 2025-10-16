@@ -1,7 +1,7 @@
 <template>
   <div class="flex flex-col min-h-screen">
     <NavBar />
-    <main class="container mx-auto p-4 flex-grow">
+    <main class="flex-grow flex items-center justify-center p-4">
       <slot />
     </main>
     <AppFooter />

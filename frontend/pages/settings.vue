@@ -4,3 +4,9 @@
     <p class="mt-2">This is the settings page.</p>
   </div>
 </template>
+
+<script setup lang="ts">
+definePageMeta({
+  middleware: ['auth'] // Apply the auth.ts middleware
+})
+</script>

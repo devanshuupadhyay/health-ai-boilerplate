@@ -12,14 +12,13 @@
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
             </svg>
           </DisclosureButton>
-
           <NuxtLink to="/" class="text-xl font-bold">
             Clinical Note AI
           </NuxtLink>
         </div>
 
         <div class="flex items-center space-x-4 divide-x divide-secondary dark:divide-dark-secondary">
-          <NuxtLink to="/" class="nav-link">Dashboard</NuxtLink>
+          <NuxtLink v-if="authStore.isLoggedIn" to="/" class="nav-link">Dashboard</NuxtLink>
           <div v-if="authStore.isLoggedIn" class="flex items-center space-x-2 px-4">
             <span class="text-sm">Welcome, {{ authStore.user?.name || 'User' }}</span>
             <button @click="handleLogout" class="bg-accent dark:bg-dark-accent hover:bg-blue-700 text-white font-bold py-1 px-3 rounded-md text-sm focus:outline-none">
@@ -35,8 +34,8 @@
 
       <DisclosurePanel>
         <div class="flex flex-col space-y-2 pt-2 pb-3">
-          <NuxtLink to="/settings" class="block py-2 pl-3 pr-4 nav-link-mobile" @click="close">Settings</NuxtLink>
-          <NuxtLink to="/account" class="block py-2 pl-3 pr-4 nav-link-mobile" @click="close">Account</NuxtLink>
+          <NuxtLink v-if="authStore.isLoggedIn" to="/settings" class="block nav-link-mobile" @click="close">Settings</NuxtLink>
+          <NuxtLink v-if="authStore.isLoggedIn" to="/account" class="block nav-link-mobile" @click="close">Account</NuxtLink>
         </div>
       </DisclosurePanel>
     </div>
@@ -44,10 +43,10 @@
 </template>
 
 <script setup lang="ts">
-import { Disclosure, DisclosureButton, DisclosurePanel } from '@headlessui/vue'
+import { Disclosure, DisclosureButton, DisclosurePanel } from '@headlessui/vue';
 import { useRouter } from '#imports'
 import { useAuthStore } from '~/stores/auth'
-import ThemeSwitcher from './ThemeSwitcher.vue'
+import ThemeSwitcher from './ThemeSwitcher.vue';
 
 const authStore = useAuthStore()
 

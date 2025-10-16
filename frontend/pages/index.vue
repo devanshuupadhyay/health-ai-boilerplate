@@ -4,3 +4,9 @@
     <p class="mt-2">Your journey to a better user experience begins here.</p>
   </div>
 </template>
+
+<script setup lang="ts">
+definePageMeta({
+  middleware: ['auth'] // Apply the auth.ts middleware
+})
+</script>

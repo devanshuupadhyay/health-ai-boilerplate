@@ -2,6 +2,64 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ----------------------------------
+ * 1. Global Base Styles & Theming
+ * (Sets the default light theme background and text)
+ * ---------------------------------- */
+body {
+  /* Apply light theme background and text color to the entire page */
+  @apply bg-primary text-text;
+  /* Ensure a smooth color transition when theme changes */
+  @apply transition-colors duration-300;
+}
+
+/* Apply dark theme background/text colors when 'dark' class is present on <html> */
+.dark body {
+  @apply bg-dark-primary text-dark-text;
+}
+
+/* ----------------------------------
+ * 2. Global Accessibility & Developer Experience (DX)
+ * ---------------------------------- */
+
+/* Custom focus ring for better accessibility (applies to non-input focusable elements) */
+/* The ring only shows on keyboard navigation, not mouse click (focus-visible) */
+*:focus-visible {
+  @apply outline-none ring-2 ring-offset-2 ring-accent dark:ring-dark-accent ring-offset-primary dark:ring-offset-dark-primary;
+}
+
+/* ----------------------------------
+ * 3. Reusable Component Utility Classes
+ * (The core of our theme-aware design system)
+ * ---------------------------------- */
+
 .nav-link {
+  /* Base styling for all main nav links */
   @apply text-text dark:text-dark-text hover:text-accent dark:hover:text-dark-accent px-4 transition-colors duration-200;
+}
+
+.nav-link-mobile {
+  /* Styling for links inside the hamburger menu */
+  @apply px-4 py-2 hover:bg-secondary dark:hover:bg-dark-secondary rounded-md;
+}
+
+.form-label {
+  /* Text and spacing consistency for all labels */
+  @apply block text-sm font-bold mb-2;
+  /* Theme Colors (Text) */
+  @apply text-soft dark:text-dark-soft;
+}
+
+.form-input {
+  /* Base layout and padding */
+  @apply shadow-sm border w-full py-2 px-3 rounded leading-tight focus:outline-none focus:ring-2;
+  /* Theme Colors (Background & Text) */
+  @apply bg-primary dark:bg-dark-primary text-text dark:text-dark-text;
+  /* Theme Colors (Border & Focus Ring) */
+  @apply border-soft dark:border-dark-soft focus:ring-accent dark:focus:ring-dark-accent;
+}
+
+.btn-primary {
+  /* Theme Colors & Styling */
+  @apply bg-accent dark:bg-dark-accent hover:opacity-90 transition-opacity duration-200 text-white font-bold py-2 px-4 rounded focus:outline-none w-full;
 }
