@@ -6,6 +6,8 @@ from sqlalchemy import pool
 
 from alembic import context
 from app.db.session import Base
+from app.models.user import User  # noqa: F401
+from app.models.patient import Patient  # noqa: F401
 
 # This is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

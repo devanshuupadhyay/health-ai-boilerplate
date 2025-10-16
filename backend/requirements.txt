@@ -7,6 +7,9 @@ SQLAlchemy
 alembic
 psycopg2-binary
 
+#fhir
+fhir.resources
+
 # Data Validation & Settings
 pydantic
 pydantic-settings
