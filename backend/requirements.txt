@@ -43,3 +43,10 @@ bcrypt==3.2.0
 
 # Search
 meilisearch
+
+# Observability
+structlog
+opentelemetry-api
+opentelemetry-sdk
+opentelemetry-instrumentation-fastapi
+sentry-sdk

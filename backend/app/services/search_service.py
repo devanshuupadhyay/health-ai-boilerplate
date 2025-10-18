@@ -1,57 +1,67 @@
 # backend/app/services/search_service.py
 import meilisearch
-import logging
+
+# import logging # Keep commented out if using Structlog now
 from app.core.config import settings
-from app.models.note import Note  # Import the Note model
+from app.models.note import Note
+from app.core.logging_config import get_logger
 
-logger = logging.getLogger(__name__)
+# --- ADD THESE IMPORTS ---
+from typing import Dict, Any
 
-# Initialize Meilisearch client
+# --- END IMPORTS ---
+
+
+log = get_logger(__name__)
+
+# ... (client initialization code) ...
 try:
     client = meilisearch.Client(settings.MEILI_URL, settings.MEILI_MASTER_KEY)
-    # Try to get the index, create if it doesn't exist (basic health check)
     notes_index = client.index("notes")
-    # Optional: Configure index settings if needed (e.g., searchable attributes)
-    # notes_index.update_settings({
-    #     'searchableAttributes': ['content', 'summary'],
-    #     'filterableAttributes': ['patient_id'],
-    # })
-    logger.info("Meilisearch client initialized and 'notes' index ensured.")
+    log.info("Meilisearch client initialized", meili_url=settings.MEILI_URL)
 except Exception as e:
-    logger.error(f"Failed to initialize Meilisearch client: {e}")
-    # Depending on your error handling strategy, you might want to
-    # raise the exception or handle it differently.
-    # For now, we log the error and might have issues later.
-    client = None  # Indicate client failed to initialize
+    log.error("Failed to initialize Meilisearch client", error=str(e), exc_info=True)
+    client = None
 
 
 def add_note_to_index(note: Note):
     """Adds or updates a note document in the Meilisearch 'notes' index."""
     if not client:
-        logger.error("Meilisearch client not available. Skipping indexing.")
+        log.error(
+            "Meilisearch client not available, skipping indexing",
+            note_id=note.id if note else None,
+        )
         return False
 
     if not note or note.id is None:
-        logger.error("Invalid note object passed to add_note_to_index.")
+        log.error("Invalid note object or note ID missing for indexing.")
         return False
 
     try:
-        # Prepare the document for Meilisearch
-        # We only index fields relevant for searching
-        document = {
-            "id": note.id,  # Meilisearch requires a unique 'id' field
+        # --- ADD TYPE HINT HERE ---
+        document: Dict[str, Any] = {
+            "id": note.id,
             "patient_id": note.patient_id,
             "content": note.content,
-            "summary": note.summary,
+            # Ensure summary is included, even if None, for consistent schema
+            "summary": note.summary if note.summary is not None else "",
         }
+        # --- END TYPE HINT ---
+
         notes_index = client.index("notes")
+        # Ensure we are passing a LIST containing the document dictionary
         task = notes_index.add_documents([document], primary_key="id")
-        logger.info(
-            f"Task submitted to Meilisearch for adding/updating Note ID {note.id}. "
-            f"Task UID: {task.task_uid}"
+        log.info(
+            "Task submitted to Meilisearch",
+            note_id=note.id,
+            task_uid=task.task_uid,
         )
-        # Note: Meilisearch indexing is asynchronous. We don't wait for completion here.
         return True
     except Exception as e:
-        logger.error(f"Failed to add/update Note ID {note.id} in Meilisearch: {e}")
+        log.error(
+            "Failed to add/update note in Meilisearch",
+            note_id=note.id,
+            error=str(e),
+            exc_info=True,
+        )
         return False
