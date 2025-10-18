@@ -12,9 +12,7 @@ export default defineNuxtConfig({
   ],
 
   // Global CSS settings
-  css: [
-    '~/assets/css/main.css'
-  ],
+  css: ['~/assets/css/main.css'],
 
   // Configuration for Tailwind CSS
   tailwindcss: {
@@ -30,7 +28,7 @@ export default defineNuxtConfig({
     server: {
       proxy: {
         '/api': {
-          target: 'http://localhost:8008',
+          target: 'http://localhost:8008', // Your backend URL
           changeOrigin: true,
         }
       }
@@ -39,7 +37,7 @@ export default defineNuxtConfig({
 
   // Color mode configuration
   colorMode: {
-    classSuffix: '', // Tells the module to use the 'dark' class instead of 'dark-mode'
+    classSuffix: '',
   },
 
   // Adds font-sans to the <body> element globally
@@ -49,5 +47,17 @@ export default defineNuxtConfig({
         class: 'font-sans'
       }
     }
+  },
+
+  // --- ADD THIS RUNTIME CONFIG BLOCK ---
+  runtimeConfig: {
+    // Keys within public are exposed to the frontend
+    public: {
+      meiliHost: process.env.MEILI_HOST || 'http://localhost:7700', // Use localhost for browser access
+      // WARNING: Using Master Key in frontend ONLY for local dev.
+      // Generate and use a Search API Key for production!
+      meiliKey: process.env.MEILI_SEARCH_KEY || 'chnadukechachanechandukichachikochandikechamchesechatnichatai'
+    }
   }
+  // --- END RUNTIME CONFIG BLOCK ---
 })

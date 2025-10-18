@@ -11,6 +11,13 @@ class Settings(BaseSettings):
     # Celery configuration
     CELERY_BROKER_URL: str = "redis://localhost:6379/0"
     CELERY_RESULT_BACKEND: str = "redis://localhost:6379/0"
+
+    #  MEILISEARCH SETTINGS ---
+    MEILI_URL: str = "http://search:7700"  # Use service name from docker-compose
+    MEILI_MASTER_KEY: str = (
+        "chnadukechachanechandukichachikochandikechamchesechatnichatai"
+    )
+
     # Variables with default values
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
@@ -18,6 +25,7 @@ class Settings(BaseSettings):
     class Config:
         # This tells pydantic to look for a file named .env
         env_file = ".env"
+        extra = "ignore"
 
 
 # Create a single, importable instance of the settings

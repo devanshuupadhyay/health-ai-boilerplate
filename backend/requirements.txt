@@ -40,3 +40,6 @@ flake8
 pre-commit
 
 bcrypt==3.2.0
+
+# Search
+meilisearch

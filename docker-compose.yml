@@ -54,5 +54,19 @@ services:
     ports:
       - "8001:8001"
 
+  search:
+    image: getmeili/meilisearch:v1.3 # Using a specific version is good practice
+    ports:
+      - "7700:7700" # Expose Meilisearch default port
+    volumes:
+      - meili_data:/meili_data
+    environment:
+      # Use a fixed master key for local development ONLY.
+      # NEVER commit this key or use it in production.
+      - MEILI_MASTER_KEY=chnadukechachanechandukichachikochandikechamchesechatnichatai
+      # Disable analytics for local dev
+      - MEILI_NO_ANALYTICS=true
+
 volumes:
   postgres_data:
+  meili_data:

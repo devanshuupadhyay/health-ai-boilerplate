@@ -1,33 +1,41 @@
 <template>
-  <div class="p-8 w-full max-w-4xl">
+  <div class="p-4 md:p-8 w-full max-w-4xl mx-auto">
     <h1 class="text-3xl font-bold mb-6">Patient Dashboard</h1>
 
-    <div v-if="patientStore.patients.length > 0">
-      <ul class="space-y-4">
-        <li v-for="patient in patientStore.patients" :key="patient.id">
-          <NuxtLink :to="`/patients/${patient.id}`">
-            <Card class="p-4 hover:bg-secondary-focus transition-colors duration-200 cursor-pointer">
-              <div class="font-semibold">{{ formatPatientName(patient.fhir_resource) }}</div>
-              <div class="text-sm text-soft dark:text-dark-soft">
-                DOB: {{ patient.fhir_resource.birthDate || 'N/A' }} | Gender: {{ patient.fhir_resource.gender || 'N/A' }}
-              </div>
-            </Card>
-          </NuxtLink>
-        </li>
-      </ul>
+    <div class="mb-8 p-6 md:p-8 bg-secondary dark:bg-dark-secondary rounded-lg shadow"> 
+      <h2 class="text-2xl font-semibold mb-4">Search Notes</h2>
+      <NoteSearch />
     </div>
 
-    <div v-else>
-      <p>No patients found. Create one via the API docs to see them listed here.</p>
+    <div> 
+       <h2 class="text-2xl font-semibold mb-4">Patients</h2>
+       <div v-if="isLoading" class="text-center text-soft dark:text-dark-soft"> 
+         Loading patients...
+       </div>
+       <ul v-else-if="patientStore.patients.length > 0" class="space-y-4">
+         <li v-for="patient in patientStore.patients" :key="patient.id">
+           <NuxtLink :to="`/patients/${patient.id}`">
+             <Card class="p-4 hover:bg-primary dark:hover:bg-dark-primary transition-colors duration-200 cursor-pointer"> 
+               <div class="font-semibold">{{ formatPatientName(patient.fhir_resource) }}</div>
+               <div class="text-sm text-soft dark:text-dark-soft">
+                 DOB: {{ patient.fhir_resource?.birthDate || 'N/A' }} | Gender: {{ patient.fhir_resource?.gender || 'N/A' }} 
+               </div>
+             </Card>
+           </NuxtLink>
+         </li>
+       </ul>
+       <div v-else class="text-center text-soft dark:text-dark-soft"> 
+         <p>No patients found. Create one via the API docs to see them listed here.</p>
+       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { usePatientStore } from '~/stores/patients'
-import { onMounted } from 'vue'
+import { onMounted, ref } from 'vue' // Added ref
 import Card from '~/components/Card.vue'
-// Import the FHIR type
+import NoteSearch from '~/components/NoteSearch.vue'; // Import search component
 import type { PatientFHIR } from '~/types/patient'
 
 definePageMeta({
@@ -35,15 +43,29 @@ definePageMeta({
 })
 
 const patientStore = usePatientStore()
+const isLoading = ref(true); // Added loading state ref
 
-onMounted(() => {
-  patientStore.fetchPatients()
+onMounted(async () => { // Make async
+  isLoading.value = true;
+  try {
+      await patientStore.fetchPatients();
+  } catch (error) {
+      console.error("Failed to fetch patients:", error);
+      // Optionally show an error message to the user
+  } finally {
+      isLoading.value = false;
+  }
 })
 
-// The function now expects the fhir_resource part of the patient object
-const formatPatientName = (patient: PatientFHIR) => {
-  const name = patient?.name?.[0]
+// Safer name formatting function
+const formatPatientName = (patientResource: PatientFHIR | null | undefined) => {
+  const name = patientResource?.name?.[0]
   if (!name) return 'Unknown Patient'
-  return `${name.given.join(' ')} ${name.family}`
+  const givenName = Array.isArray(name.given) ? name.given.join(' ') : '';
+  return `${givenName} ${name.family || ''}`.trim() || 'Unnamed Patient'; // Fallback added
 }
 </script>
+
+<style scoped>
+/* Add any page-specific styles if needed */
+</style>
