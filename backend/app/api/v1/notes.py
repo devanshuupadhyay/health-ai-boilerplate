@@ -3,11 +3,13 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.api import deps
-from app.schemas.note import Note, NoteCreate
+from app.schemas.note import Note, NoteCreate  # Ensure Note is imported from schemas
 from app.services.note_service import note as note_service
 from app.services.patient_service import patient as patient_service
+import logging  # <-- ADD THIS IMPORT
 
 router = APIRouter()
+logger = logging.getLogger(__name__)  # <-- ADD LOGGER INSTANCE
 
 
 @router.post("/", response_model=Note)
@@ -19,7 +21,6 @@ def create_note(
     """
     Create a new note for a patient.
     """
-    # Verify patient exists before creating a note
     patient = patient_service.get(db=db, id=note_in.patient_id)
     if not patient:
         raise HTTPException(status_code=404, detail="Patient not found")
@@ -38,4 +39,13 @@ def read_notes_by_patient(
     Retrieve all notes for a specific patient.
     """
     notes = note_service.get_notes_by_patient(db=db, patient_id=patient_id)
+
+    # --- ADD THIS LOGGING LOOP ---
+    logger.info(f"Fetched {len(notes)} notes from service for patient {patient_id}.")
+    for note_obj in notes:
+        logger.info(
+            f"Note ID: {note_obj.id}, Summary from DB object: {note_obj.summary}"
+        )
+    # --- END LOGGING LOOP ---
+
     return notes

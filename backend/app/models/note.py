@@ -10,5 +10,6 @@ class Note(Base):
     id = Column(Integer, primary_key=True, index=True)
     content = Column(Text, nullable=False)
     patient_id = Column(Integer, ForeignKey("patients.id"), nullable=False)
+    summary = Column(Text, nullable=True)
 
     patient = relationship("Patient", back_populates="notes")
