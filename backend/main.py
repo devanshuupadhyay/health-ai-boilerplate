@@ -1,7 +1,7 @@
 # path: backend/main.py
 
 from fastapi import FastAPI
-from app.api.v1 import users, auth, patients  # Import the auth router
+from app.api.v1 import users, auth, patients, notes
 
 app = FastAPI(title="Health AI Boilerplate API")
 
@@ -22,3 +22,4 @@ def debug_config():
 app.include_router(users.router, prefix="/api/v1/users", tags=["users"])
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["auth"])
 app.include_router(patients.router, prefix="/api/v1/patients", tags=["patients"])
+app.include_router(notes.router, prefix="/api/v1/notes", tags=["notes"])

@@ -9,6 +9,13 @@ services:
       - POSTGRES_DB=health_ai_db
     ports:
       - "5432:5432"
+
+  # --- ADD THIS NEW REDIS SERVICE ---
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
   backend:
     build: ./backend
     volumes:
@@ -17,10 +24,35 @@ services:
       - "8008:8000"
     env_file:
       - ./backend/.env
+    # --- ADD THIS ENVIRONMENT BLOCK FOR CELERY ---
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
     depends_on:
       - db
+      - redis
+
+  # --- ADD THIS NEW CELERY WORKER SERVICE ---
+  celery_worker:
+    build: ./backend # It uses the same image as the backend
+    command: celery -A celery_worker.celery worker --loglevel=info
+    volumes:
+      - ./backend:/app
+    env_file:
+      - ./backend/.env
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    depends_on:
+      - backend
+      - redis
+
+  ai:
+    build: ./ai
+    volumes:
+      - ./ai:/app
+    ports:
+      - "8001:8001"
 
 volumes:
   postgres_data:
-
-  
