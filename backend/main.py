@@ -12,6 +12,7 @@ from sentry_sdk.integrations.fastapi import FastApiIntegration
 from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
 from sentry_sdk.integrations.celery import CeleryIntegration
 from app.core.config import settings  # Need settings for DSN
+from prometheus_fastapi_instrumentator import Instrumentator
 
 # --- INITIALIZE SENTRY SDK ---
 if settings.SENTRY_DSN:
@@ -53,6 +54,9 @@ app = FastAPI(title="Health AI Boilerplate API")
 # FastAPIInstrumentor().instrument_app(app)
 # log.info("FastAPI application instrumented with OpenTelemetry.")
 
+# Exposes /metrics endpoint
+Instrumentator().instrument(app).expose(app)
+log.info("FastAPI application instrumented with Prometheus.")
 
 log.info("Starting Health AI Boilerplate API...")  # Keep this log
 

@@ -1,6 +1,5 @@
 <template>
-  <div class="p-8 w-full max-w-2xl mx-auto">
-    <h1 class="text-3xl font-bold mb-6">Admin Dashboard & Tools</h1>
+  <div class="p-8 w-full max-w-4xl mx-auto"> <h1 class="text-3xl font-bold mb-6">Admin Dashboard & Tools</h1>
     <p class="mb-8 text-soft dark:text-dark-soft">
       Quick links to access the various services and dashboards running locally for this boilerplate.
     </p>
@@ -16,10 +15,16 @@
             <span class="text-sm text-soft dark:text-dark-soft"> - View logs and performance metrics. (Login: admin/admin)</span>
           </li>
           <li>
-            <a href="http://localhost:9090" target="_blank" rel="noopener noreferrer" class="text-accent dark:text-dark-accent hover:underline">
+            <a href="http://localhost:9090/targets" target="_blank" rel="noopener noreferrer" class="text-accent dark:text-dark-accent hover:underline">
               Prometheus Targets
             </a>
             <span class="text-sm text-soft dark:text-dark-soft"> - Check metric scraping status.</span>
+          </li>
+           <li>
+             <a href="http://localhost:8008/metrics" target="_blank" rel="noopener noreferrer" class="text-accent dark:text-dark-accent hover:underline">
+               Backend Metrics Endpoint
+             </a>
+             <span class="text-sm text-soft dark:text-dark-soft"> - See raw Prometheus metrics from FastAPI.</span>
           </li>
           <li>
             <a href="https://sentry.io/" target="_blank" rel="noopener noreferrer" class="text-accent dark:text-dark-accent hover:underline">

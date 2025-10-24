@@ -19,7 +19,7 @@ scrape_configs:
     static_configs:
       - targets: ['localhost:9090'] # Prometheus runs on port 9090 inside its container
 
-  # --- We will add scraping for the 'backend' service later ---
-  # - job_name: 'health-ai-backend'
-  #   static_configs:
-  #     - targets: ['backend:8000'] # Assuming metrics are exposed on port 8000
+  - job_name: 'health-ai-backend'
+    static_configs:
+      # Use the service name and internal port defined in docker-compose.yml
+      - targets: ['backend:8000']

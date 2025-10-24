@@ -19,6 +19,7 @@
 
         <div class="flex items-center space-x-4 divide-x divide-secondary dark:divide-dark-secondary">
           <NuxtLink v-if="authStore.isLoggedIn" to="/patients" class="nav-link">Patients</NuxtLink>
+          <NuxtLink v-if="authStore.isLoggedIn" to="/admin" class="nav-link">IT Admin</NuxtLink>
           <div v-if="authStore.isLoggedIn" class="flex items-center space-x-2 px-4">
             <span class="text-sm">Welcome, {{ authStore.user?.name || 'User' }}</span>
             <button @click="handleLogout" class="bg-accent dark:bg-dark-accent hover:bg-blue-700 text-white font-bold py-1 px-3 rounded-md text-sm focus:outline-none">

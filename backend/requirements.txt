@@ -52,3 +52,4 @@ opentelemetry-instrumentation-requests
 opentelemetry-instrumentation-celery
 structlog
 sentry-sdk
+prometheus-fastapi-instrumentator
