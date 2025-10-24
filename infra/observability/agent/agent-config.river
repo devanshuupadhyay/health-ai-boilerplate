@@ -1,0 +1,85 @@
+// infra/observability/agent/agent-config.river
+
+// --- Import necessary components ---
+import.docker "github.com/grafana/agent/component/discovery/docker"
+import.loki_source "github.com/grafana/agent/component/loki/source/docker" // Renamed import alias for clarity
+import.loki_write "github.com/grafana/agent/component/loki/write" // Renamed import alias
+
+// --- Configure Logging Pipeline ---
+
+// 1. Discover Docker containers using the Docker socket
+discovery.docker "container_discovery" { // Renamed component for clarity
+	host = "unix:///var/run/docker.sock"
+	// Note: By default, it discovers all running containers managed by the Docker daemon.
+}
+
+// 2. Scrape logs from discovered containers
+loki.source.docker "log_scraper" { // Renamed component
+	host = "unix:///var/run/docker.sock"
+	targets = discovery.docker.container_discovery.targets // Use targets from the discovery component
+	forward_to = [loki.write.grafana_cloud_loki.receiver] // Send logs directly to the write component
+
+	// Define how logs are labeled in Loki
+	relabel_rules = [
+		// Extract container name without leading slash
+		{ source_labels = ["__meta_docker_container_name"], regex = "/(.*)", target_label = "container" },
+		// Use compose service name as the 'job' label (standard practice)
+		{ source_labels = ["__meta_docker_container_label_com_docker_compose_service"], target_label = "job" },
+		// Use compose project name as the 'compose_project' label (optional but useful)
+		{ source_labels = ["__meta_docker_container_label_com_docker_compose_project"], target_label = "compose_project" },
+	]
+}
+
+// 3. Send scraped logs to Grafana Cloud Loki
+loki.write "grafana_cloud_loki" { // Renamed component
+	endpoint {
+		url = env("LOKI_URL") // Get URL from environment variable
+		basic_auth {
+			username = env("LOKI_USERNAME") // Get User ID from environment variable
+			password = env("LOKI_PASSWORD") // Get API Key from environment variable
+		}
+		// Optional: Add tenant ID if required by your Grafana Cloud setup (usually needed for free tier)
+		// Check your Grafana Cloud Loki details if unsure. Often same as LOKI_USERNAME.
+		// tenant_id = env("LOKI_USERNAME")
+	}
+	external_labels = {
+		// Add a label to identify the source easily in Grafana Cloud
+		source = "health-ai-boilerplate-agent"
+	}
+}
+
+// --- Configure Metrics Pipeline (Commented out for now) ---
+/*
+import.prom_scrape "github.com/grafana/agent/component/prometheus/scrape" // Renamed import alias
+import.prom_write "github.com/grafana/agent/component/prometheus/remote_write" // Renamed import alias
+
+// 1. Define where to send Prometheus metrics
+prometheus.remote_write "grafana_cloud_prom" {
+	endpoint {
+		url = env("PROM_REMOTE_WRITE_URL")
+		basic_auth {
+			username = env("PROM_REMOTE_WRITE_USERNAME")
+			password = env("PROM_REMOTE_WRITE_PASSWORD")
+		}
+	}
+}
+
+// 2. Configure scraping (Example: Scrape the agent's own metrics)
+//    We would add another scrape job here later for the backend service.
+prometheus.scrape "agent_self_scrape" {
+	targets = [
+		{"__address__" = "localhost:12345", "job" = "grafana-agent"}, // Agent exposes its own metrics
+	]
+	forward_to = [prometheus.remote_write.grafana_cloud_prom.receiver]
+	scrape_interval = "15s"
+}
+
+// Example: Scrape backend service if it exposes metrics on port 8000
+// prometheus.scrape "backend_scrape" {
+//   targets = [
+//     {"__address__" = "backend:8000", "job" = "backend"}
+//   ]
+//   forward_to = [prometheus.remote_write.grafana_cloud_prom.receiver]
+//   scrape_interval = "15s"
+// }
+*/

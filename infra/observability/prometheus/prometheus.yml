@@ -1,0 +1,25 @@
+# infra/observability/prometheus/prometheus.yml
+
+global:
+  scrape_interval: 15s # Default scrape interval
+  evaluation_interval: 15s # Default evaluation interval for rules
+
+# Alerting configuration (can be added later)
+# alerting:
+#   alertmanagers:
+#     - static_configs:
+#         - targets: ['alertmanager:9093'] 
+
+# Rule files configuration (can be added later)
+# rule_files:
+#   - "rules/*.yml"
+
+scrape_configs:
+  - job_name: 'prometheus' # Job to scrape Prometheus itself
+    static_configs:
+      - targets: ['localhost:9090'] # Prometheus runs on port 9090 inside its container
+
+  # --- We will add scraping for the 'backend' service later ---
+  # - job_name: 'health-ai-backend'
+  #   static_configs:
+  #     - targets: ['backend:8000'] # Assuming metrics are exposed on port 8000

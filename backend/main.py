@@ -1,27 +1,70 @@
 # path: backend/main.py
 
-from app.core.logging_config import configure_logging, get_logger
+# Imports
 from fastapi import FastAPI
+from app.core.logging_config import configure_logging, get_logger
 from app.api.v1 import users, auth, patients, notes
 
-# Configure logging at the start of the application
+# from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
+# --- ADD SENTRY IMPORTS ---
+import sentry_sdk
+from sentry_sdk.integrations.fastapi import FastApiIntegration
+from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
+from sentry_sdk.integrations.celery import CeleryIntegration
+from app.core.config import settings  # Need settings for DSN
+
+# --- INITIALIZE SENTRY SDK ---
+if settings.SENTRY_DSN:
+    try:
+        sentry_sdk.init(
+            dsn=settings.SENTRY_DSN,
+            # Add integrations for frameworks/libraries you use
+            integrations=[
+                FastApiIntegration(),
+                SqlalchemyIntegration(),
+                CeleryIntegration(),
+            ],
+            # Set traces_sample_rate to 1.0 to capture 100%
+            # of transactions for performance monitoring.
+            # Adjust sampling in production.
+            traces_sample_rate=1.0,
+            # Set profiles_sample_rate to 1.0 to profile 100%
+            # of sampled transactions. Adjust sampling in production.
+            profiles_sample_rate=1.0,
+            # You can add environment, release version etc. here too
+            # environment="development", # Example
+        )
+        print(
+            "Sentry SDK initialized successfully."
+        )  # Use print here as logger might not be ready yet
+    except Exception as e:
+        print(f"Failed to initialize Sentry SDK: {e}")  # Use print for early errors
+else:
+    print("SENTRY_DSN not found, skipping Sentry initialization.")
+# --- END SENTRY SETUP ---
+
+# Configure logging & OTEL (already done in previous step)
 configure_logging()
 
-# Initialize logger
 log = get_logger(__name__)
-
-
 app = FastAPI(title="Health AI Boilerplate API")
 
-log.info("Starting Health AI Boilerplate API...")
+# This automatically adds tracing to incoming requests
+# FastAPIInstrumentor().instrument_app(app)
+# log.info("FastAPI application instrumented with OpenTelemetry.")
 
 
+log.info("Starting Health AI Boilerplate API...")  # Keep this log
+
+
+# --- Root endpoint ---
 @app.get("/")
 def read_root():
     log.info("Root endpoint called")
     return {"status": "ok", "message": "Welcome to the Health AI Boilerplate API"}
 
 
+# --- Debug config endpoint ---
 @app.get("/debug-config")
 def debug_config():
     from app.core.config import settings
@@ -30,7 +73,7 @@ def debug_config():
     return {"database_url": settings.DATABASE_URL}
 
 
-# Include the routers
+# --- Include routers ---
 app.include_router(users.router, prefix="/api/v1/users", tags=["users"])
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["auth"])
 app.include_router(patients.router, prefix="/api/v1/patients", tags=["patients"])

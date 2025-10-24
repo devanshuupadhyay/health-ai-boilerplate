@@ -1,0 +1,34 @@
+# infra/observability/promtail/promtail-config.yml
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+positions:
+  filename: /tmp/positions.yaml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push # Send logs to Loki service
+
+scrape_configs:
+  - job_name: containers
+    docker_sd_configs:
+      - host: unix:///var/run/docker.sock # Use Docker socket to discover containers
+        refresh_interval: 5s
+        # Optional: Filter which containers Promtail scrapes logs from
+        # filters:
+        #   - name: label
+        #     values: ["logging=promtail"] # Example: Only scrape containers with this label
+    relabel_configs:
+      # Relabel logs to include useful info like container name, service name etc.
+      - source_labels: ['__meta_docker_container_name']
+        regex: '/(.*)'
+        target_label: 'container'
+      - source_labels: ['__meta_docker_container_log_stream']
+        target_label: 'stream'
+      # Example: Extract service name from compose project name + service name label
+      - source_labels: ['__meta_docker_container_label_com_docker_compose_project', '__meta_docker_container_label_com_docker_compose_service']
+        separator: '-'
+        target_label: 'job' # Use 'job' label, common practice
+      # Example: If you add custom labels to your services in docker-compose.yml:
+      # - source_labels: ['__meta_docker_container_label_app']
+      #   target_label: 'app'

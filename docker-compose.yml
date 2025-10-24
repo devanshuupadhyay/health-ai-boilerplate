@@ -10,7 +10,6 @@ services:
     ports:
       - "5432:5432"
 
-  # --- ADD THIS NEW REDIS SERVICE ---
   redis:
     image: redis:7-alpine
     ports:
@@ -24,17 +23,16 @@ services:
       - "8008:8000"
     env_file:
       - ./backend/.env
-    # --- ADD THIS ENVIRONMENT BLOCK FOR CELERY ---
     environment:
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
     depends_on:
       - db
       - redis
+    # Logging handled by Promtail
 
-  # --- ADD THIS NEW CELERY WORKER SERVICE ---
   celery_worker:
-    build: ./backend # It uses the same image as the backend
+    build: ./backend
     command: celery -A celery_worker.celery worker --loglevel=info
     volumes:
       - ./backend:/app
@@ -46,6 +44,7 @@ services:
     depends_on:
       - backend
       - redis
+    # Logging handled by Promtail
 
   ai:
     build: ./ai
@@ -53,20 +52,83 @@ services:
       - ./ai:/app
     ports:
       - "8001:8001"
+    # Logging handled by Promtail (optional)
 
   search:
-    image: getmeili/meilisearch:v1.3 # Using a specific version is good practice
+    image: getmeili/meilisearch:v1.3
     ports:
-      - "7700:7700" # Expose Meilisearch default port
+      - "7700:7700"
     volumes:
       - meili_data:/meili_data
     environment:
-      # Use a fixed master key for local development ONLY.
-      # NEVER commit this key or use it in production.
+      # Use a secure key! Consider moving to .env or secrets management.
       - MEILI_MASTER_KEY=chnadukechachanechandukichachikochandikechamchesechatnichatai
-      # Disable analytics for local dev
       - MEILI_NO_ANALYTICS=true
+
+  # --- LOCAL OBSERVABILITY STACK ---
+  prometheus:
+    image: prom/prometheus:v2.47.2
+    volumes:
+      - ./infra/observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+      - '--web.enable-lifecycle'
+    ports:
+      - "9090:9090"
+    labels:
+      - "app=prometheus"
+
+  loki:
+    image: grafana/loki:2.9.1
+    volumes:
+      - ./infra/observability/loki/loki-config.yml:/etc/loki/local-config.yaml
+      - loki_data:/loki
+    command: -config.file=/etc/loki/local-config.yaml
+    ports:
+      - "3100:3100"
+    labels:
+      - "app=loki"
+
+  grafana:
+    image: grafana/grafana:10.1.5
+    volumes:
+      - ./infra/observability/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources
+      - ./infra/observability/grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards
+      - grafana_data:/var/lib/grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+    ports:
+      - "3001:3000" # Using port 3001 on host
+    depends_on:
+      - prometheus
+      - loki
+    labels:
+      - "app=grafana"
+
+  promtail:
+    image: grafana/promtail:2.9.1
+    volumes: # Ensure 'volumes' key is listed only once
+      - /var/run/docker.sock:/var/run/docker.sock:ro # Mount Docker socket (read-only)
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro # Mount container logs (read-only)
+      - ./infra/observability/promtail/promtail-config.yml:/etc/promtail/config.yml # Mount config file
+    command: -config.file=/etc/promtail/config.yml
+    depends_on:
+      - loki
+    labels:
+      - "app=promtail"
+  # --- END LOCAL OBSERVABILITY STACK ---
 
 volumes:
   postgres_data:
   meili_data:
+  # --- Volumes for local observability stack ---
+  prometheus_data:
+  loki_data:
+  grafana_data:

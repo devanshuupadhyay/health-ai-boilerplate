@@ -3,18 +3,45 @@ import logging
 import sys
 import structlog
 
+# OpenTelemetry Imports
+# from opentelemetry import trace
+# from opentelemetry.sdk.trace import TracerProvider
+# from opentelemetry.sdk.trace.export import BatchSpanProcessor, ConsoleSpanExporter
+# from opentelemetry.sdk.resources import Resource
+# --- ADD INSTRUMENTOR IMPORTS ---
+# from opentelemetry.instrumentation.requests import RequestsInstrumentor
+# from opentelemetry.instrumentation.celery import CeleryInstrumentor
+# --- END INSTRUMENTOR IMPORTS ---
+
 
 def configure_logging():
-    """Configures standard logging and Structlog."""
+    """Configures standard logging, Structlog, and OpenTelemetry."""
 
-    # Basic configuration for standard logging (optional, but good practice)
+    # OpenTelemetry Setup
+    # resource = Resource(attributes={"service.name": "health-ai-backend"})
+    # provider = TracerProvider(resource=resource)
+    # exporter = ConsoleSpanExporter()
+    # processor = BatchSpanProcessor(exporter)
+    # provider.add_span_processor(processor)
+    # trace.set_tracer_provider(provider)
+    # print("OpenTelemetry configured with ConsoleSpanExporter.")
+
+    # --- ENABLE INSTRUMENTATIONS ---
+    # Instrument the 'requests' library
+    # RequestsInstrumentor().instrument()
+    # print("RequestsInstrumentor enabled.")
+
+    # Instrument Celery
+    # CeleryInstrumentor().instrument()
+    # print("CeleryInstrumentor enabled.")
+    # --- END ENABLE INSTRUMENTATIONS ---
+
+    # Structlog configuration (Keep existing)
     logging.basicConfig(
         format="%(message)s",
         stream=sys.stdout,
         level=logging.INFO,
     )
-
-    # Configure Structlog
     structlog.configure(
         processors=[
             structlog.stdlib.add_logger_name,
@@ -24,16 +51,17 @@ def configure_logging():
             structlog.processors.format_exc_info,
             structlog.processors.JSONRenderer(),
         ],
-        # Use a standard library logger factory
         logger_factory=structlog.stdlib.LoggerFactory(),
-        # Use a standard library wrapper class for compatibility
         wrapper_class=structlog.stdlib.BoundLogger,
-        # Cache the logger factory for performance
         cache_logger_on_first_use=True,
     )
-    print("Structlog configured.")  # Simple confirmation log
+    print("Structlog configured.")
 
 
+# ... (get_logger and get_tracer functions remain the same) ...
 def get_logger(name: str) -> structlog.stdlib.BoundLogger:
-    """Helper function to get a Structlog logger instance."""
     return structlog.get_logger(name)
+
+
+# def get_tracer(name: str):
+# return trace.get_tracer(name)

@@ -1,0 +1,21 @@
+# infra/observability/grafana/provisioning/datasources/datasources.yml
+
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    type: prometheus
+    access: proxy # Access Grafana backend instead of browser direct
+    url: http://prometheus:9090 # Use Docker service name
+    isDefault: true # Make Prometheus the default datasource
+    jsonData:
+      timeInterval: "15s" # Match Prometheus scrape interval
+    editable: true # Allow editing in Grafana UI if needed
+
+  - name: Loki
+    type: loki
+    access: proxy
+    url: http://loki:3100 # Use Docker service name
+    jsonData:
+      maxLines: 1000 # Default max lines to show in Explore
+    editable: true

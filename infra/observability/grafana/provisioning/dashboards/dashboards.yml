@@ -1,0 +1,13 @@
+# infra/observability/grafana/provisioning/dashboards/dashboards.yml
+
+apiVersion: 1
+
+providers:
+  - name: 'default' # A provider name
+    orgId: 1 # Default organization ID
+    folder: '' # Optional: specify a folder name in Grafana
+    type: file
+    disableDeletion: false # Allow deleting dashboards via UI
+    editable: true # Allow editing dashboards via UI
+    options:
+      path: /etc/grafana/provisioning/dashboards # Path inside the container where dashboards are mounted

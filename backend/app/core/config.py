@@ -1,6 +1,7 @@
 # path: backend/app/core/config.py
 
 from pydantic_settings import BaseSettings
+from typing import Optional
 
 
 class Settings(BaseSettings):
@@ -17,6 +18,9 @@ class Settings(BaseSettings):
     MEILI_MASTER_KEY: str = (
         "chnadukechachanechandukichachikochandikechamchesechatnichatai"
     )
+
+    # Sentry DSN
+    SENTRY_DSN: Optional[str] = None
 
     # Variables with default values
     ALGORITHM: str = "HS256"
