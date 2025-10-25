@@ -11,7 +11,8 @@
             id="email"
             name="email"
             class="form-input"
-            :class="{ 'invalid': errors.email }"  />
+            :class="{ 'invalid': errors.email }"
+          />
           <p v-if="errors.email" class="form-error-message">{{ errors.email }}</p>
         </div>
         <div class="mb-6">
@@ -23,11 +24,13 @@
             id="password"
             name="password"
             class="form-input"
-            :class="{ 'invalid': errors.password }" />
+            :class="{ 'invalid': errors.password }"
+          />
           <p v-if="errors.password" class="form-error-message">{{ errors.password }}</p>
         </div>
 
         <p v-if="loginError" class="form-error-message mb-4 text-center">{{ loginError }}</p>
+
         <div class="flex items-center justify-between">
           <button
             type="submit"
@@ -68,30 +71,36 @@ const [password, passwordAttrs] = defineField('password');
 
 const authStore = useAuthStore();
 const router = useRouter();
-const loginError = ref<string | null>(null);
+const loginError = ref<string | null>(null); // For backend login errors
 
+// --- UPDATED handleLogin ---
 const handleLogin = handleSubmit(async (values) => {
-  loginError.value = null; // Clear previous error
+
+  loginError.value = null; // Clear previous general error
 
   let result: { success: boolean; message: string | null };
 
   try {
-    result = await authStore.login(values.email, values.password);
+    result = await authStore.login(values.email, values.password); // Call store action
 
     if (result.success) {
-      router.push('/');
+      router.push('/'); // Redirect on success
     } else {
+      // Handle login failure reported by the store
       console.error("Login attempt failed:", result.message);
       loginError.value = result.message || 'An unknown error occurred.';
-      console.log('loginError ref was set to:', loginError.value);
+      console.log('loginError ref was set to:', loginError.value); // Log state update
     }
   } catch (error) {
+    // Catch unexpected errors during the login process
     console.error("Error during login process:", error);
     loginError.value = 'An unexpected error occurred during login.';
-     console.log('loginError ref was set after catch:', loginError.value);
+     console.log('loginError ref was set after catch:', loginError.value); // Log state update
   }
 });
+// --- END UPDATE ---
 
+// Clears the general login error message when user types
 const clearLoginError = () => {
   loginError.value = null;
 }

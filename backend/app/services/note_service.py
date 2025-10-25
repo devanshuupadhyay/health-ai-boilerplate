@@ -64,7 +64,12 @@ class NoteService:
         """
         Get all notes for a specific patient.
         """
-        return db.query(self.model).filter(self.model.patient_id == patient_id).all()
+        return (
+            db.query(self.model)
+            .filter(self.model.patient_id == patient_id)
+            .order_by(self.model.id.desc())
+            .all()
+        )
 
 
 note = NoteService(Note)
