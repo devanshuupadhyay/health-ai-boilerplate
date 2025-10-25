@@ -1,7 +1,9 @@
 <template>
-  <div id="app-root">
+  <div class="h-full">
     <NuxtLayout>
       <NuxtPage />
     </NuxtLayout>
+    
+    <DemoToast />
   </div>
 </template>

@@ -8,7 +8,16 @@ export default defineConfig({
     baseUrl: 'http://localhost:3000',
     chromeWebSecurity: false, 
     setupNodeEvents(on, config) {
-      // implement node event listeners here
+      on('before:browser:launch', (browser, launchOptions) => {
+        // This targets Chrome and other Chromium-based browsers
+        if (browser.family === 'chromium') {
+          launchOptions.preferences.default['credentials_enable_service'] = false
+          launchOptions.preferences.default['profile.password_manager_enabled'] =
+            false
+        }
+
+        return launchOptions
+      })
     },
   },
 })
