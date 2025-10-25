@@ -5,6 +5,8 @@ export default defineConfig({
     CYPRESS_RUNNING: 'true'
   },
   e2e: {
+    viewportWidth: 1920,
+    viewportHeight: 1080,
     baseUrl: 'http://localhost:3000',
     chromeWebSecurity: false, 
     setupNodeEvents(on, config) {
