@@ -12,7 +12,7 @@ describe('RPA Workflow Simulation', () => {
   };
 
   beforeEach(() => {
-    //cy.viewport(1200, 800);
+    cy.viewport(1200, 800);
     cy.log('Starting RPA workflow...');
   });
 
