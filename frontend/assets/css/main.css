@@ -63,3 +63,17 @@ body {
   /* Theme Colors & Styling */
   @apply bg-accent dark:bg-dark-accent hover:opacity-90 transition-opacity duration-200 text-white font-bold py-2 px-4 rounded focus:outline-none w-full;
 }
+
+/* ----------------------------------
+ * 4. Form Validation Styles
+ * ---------------------------------- */
+
+.form-input.invalid {
+  /* Style for invalid input fields */
+  @apply border-red-500 dark:border-red-400 focus:ring-red-500 dark:focus:ring-red-400;
+}
+
+.form-error-message {
+   /* Style for error messages */
+  @apply text-red-500 dark:text-red-400 text-xs italic mt-1;
+}

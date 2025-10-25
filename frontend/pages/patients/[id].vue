@@ -15,12 +15,10 @@
         </div>
       </div>
     </Card>
-    <div v-else-if="isLoadingPatient" class="text-center p-8">
-      <p>Loading patient details...</p>
-    </div>
-     <div v-else class="text-center p-8 text-red-500 dark:text-red-400">
-      <p>Could not load patient details.</p>
-    </div>
+     <div v-else-if="isLoadingPatient" class="text-center p-8">
+       <p class="text-soft dark:text-dark-soft">Loading patient details...</p> </div>
+      <div v-else class="text-center p-8 form-error-message"> <p>Could not load patient details.</p>
+     </div>
 
     <Card class="p-6 md:p-8">
       <h2 class="text-xl font-bold mb-4">Clinical Notes</h2>
@@ -30,139 +28,142 @@
         <textarea
           id="newNote"
           v-model="newNoteContent"
-          class="form-input"
-          rows="4"
+          v-bind="newNoteAttrs"
+          class="form-input" :class="{ 'invalid': noteErrors.newNoteContent }" rows="4"
           placeholder="Enter new clinical note..."
-          required
           :disabled="isSubmittingNote"
         ></textarea>
-        <button type="submit" class="btn-primary mt-2 !w-auto" :disabled="isSubmittingNote">
-           {{ isSubmittingNote ? 'Adding...' : 'Add Note' }}
+        <p v-if="noteErrors.newNoteContent" class="form-error-message"> {{ noteErrors.newNoteContent }}
+        </p>
+        <button type="submit" class="btn-primary mt-2 !w-auto" :disabled="isSubmittingNote"> {{ isSubmittingNote ? 'Adding...' : 'Add Note' }}
         </button>
       </form>
 
       <div v-if="isLoadingNotes" class="text-center">
-        <p>Loading notes...</p>
-      </div>
+        <p class="text-soft dark:text-dark-soft">Loading notes...</p> </div>
       <ul v-else-if="noteStore.notes.length > 0" class="space-y-4">
         <li v-for="note in noteStore.notes" :key="note.id">
-          <div class="p-4 bg-primary dark:bg-dark-primary rounded-lg shadow">
+           <div class="p-4 bg-primary dark:bg-dark-primary rounded-lg shadow">
             <p class="text-text dark:text-dark-text mb-2 whitespace-pre-wrap">{{ note.content }}</p>
 
-            <div v-if="note.summary" class="mt-2 pt-2 border-t border-soft/50 dark:border-dark-soft/50">
-              <p class="text-sm text-soft dark:text-dark-soft italic">
-                <strong>AI Summary:</strong> {{ note.summary }}
+            <div v-if="note.summary" class="mt-2 pt-2 border-t border-soft/50 dark:border-dark-soft/50"> <p class="text-sm text-soft dark:text-dark-soft italic"> <strong>AI Summary:</strong> {{ note.summary }}
               </p>
-            </div><div v-else class="mt-2 pt-2 border-t border-soft/50 dark:border-dark-soft/50">
-              <p class="text-sm text-soft dark:text-dark-soft italic">
-                Summary is being generated...
+            </div><div v-else class="mt-2 pt-2 border-t border-soft/50 dark:border-dark-soft/50"> <p class="text-sm text-soft dark:text-dark-soft italic"> Summary is being generated...
               </p>
             </div>
           </div>
         </li>
       </ul>
-      <p v-else class="text-soft dark:text-dark-soft">No clinical notes found for this patient.</p>
-    </Card>
+      <p v-else class="text-soft dark:text-dark-soft">No clinical notes found for this patient.</p> </Card>
   </div>
 </template>
 
 <script setup lang="ts">
-import { useRoute } from 'vue-router'
-import { usePatientStore } from '~/stores/patients'
-import { useNoteStore } from '~/stores/notes'
-import { computed, onMounted, ref } from 'vue'
-import Card from '~/components/Card.vue'
+import { useRoute } from 'vue-router';
+import { usePatientStore } from '~/stores/patients';
+import { useNoteStore } from '~/stores/notes';
+import { computed, onMounted, ref } from 'vue';
+import Card from '~/components/Card.vue';
+import { useForm } from 'vee-validate';
+import * as zod from 'zod';
+import { toTypedSchema } from '@vee-validate/zod';
 
 definePageMeta({
   middleware: ['auth']
-})
+});
 
-const route = useRoute()
-const patientStore = usePatientStore()
-const noteStore = useNoteStore()
+const route = useRoute();
+const patientStore = usePatientStore();
+const noteStore = useNoteStore();
 
-const newNoteContent = ref('')
-const isLoadingPatient = ref(true)
-const isLoadingNotes = ref(true)
-const isSubmittingNote = ref(false)
+const isLoadingPatient = ref(true);
+const isLoadingNotes = ref(true);
+const isSubmittingNote = ref(false);
 
 const patientId = computed(() => {
-  const idParam = route.params.id
-  return Array.isArray(idParam) ? idParam[0] : idParam
-})
+  const idParam = route.params.id;
+  return Array.isArray(idParam) ? idParam[0] : idParam;
+});
+
+const noteValidationSchema = toTypedSchema(
+  zod.object({
+    newNoteContent: zod.string()
+      .trim()
+      .min(1, 'Note content cannot be empty')
+      .max(5000, 'Note cannot exceed 5000 characters')
+  })
+);
+
+const { handleSubmit: handleNoteSubmit, errors: noteErrors, defineField: defineNoteField, resetForm: resetNoteForm } = useForm({
+  validationSchema: noteValidationSchema,
+});
+
+const [newNoteContent, newNoteAttrs] = defineNoteField('newNoteContent');
 
 onMounted(async () => {
-  const currentPatientId = patientId.value;
-  if (currentPatientId) {
-    isLoadingPatient.value = true;
-    isLoadingNotes.value = true;
-    try {
-      await Promise.all([
-        patientStore.fetchPatientById(currentPatientId),
-        noteStore.fetchNotesByPatientId(currentPatientId)
-      ]);
-    } catch (error) {
-      console.error("Error fetching patient details or notes:", error);
-    } finally {
-      isLoadingPatient.value = false;
-      isLoadingNotes.value = false;
+    const currentPatientId = patientId.value;
+    if (currentPatientId) {
+        isLoadingPatient.value = true;
+        isLoadingNotes.value = true;
+        try {
+        await Promise.all([
+            patientStore.fetchPatientById(currentPatientId),
+            noteStore.fetchNotesByPatientId(currentPatientId)
+        ]);
+        } catch (error) {
+        console.error("Error fetching patient details or notes:", error);
+        } finally {
+        isLoadingPatient.value = false;
+        isLoadingNotes.value = false;
+        }
+    } else {
+        isLoadingPatient.value = false;
+        isLoadingNotes.value = false;
+        console.error("Patient ID is missing from the route.");
     }
-  } else {
-    isLoadingPatient.value = false;
-    isLoadingNotes.value = false;
-    console.error("Patient ID is missing from the route.");
-  }
-})
+});
 
 const patientName = computed(() => {
-  const patient = patientStore.currentPatient
-  const name = patient?.name?.[0]
-  if (!name) return 'N/A'
-  const givenName = Array.isArray(name.given) ? name.given.join(' ') : ''
-  return `${givenName} ${name.family || ''}`.trim() || 'Unnamed Patient'
-})
+    const patient = patientStore.currentPatient
+    const name = patient?.name?.[0]
+    if (!name) return 'N/A'
+    const givenName = Array.isArray(name.given) ? name.given.join(' ') : ''
+    return `${givenName} ${name.family || ''}`.trim() || 'Unnamed Patient'
+});
 
-const handleCreateNote = async () => {
-  const currentPatientId = patientId.value
-  const content = newNoteContent.value.trim()
-
-  if (!currentPatientId || !content) {
-    alert('Note content cannot be empty.')
-    return
+const handleCreateNote = handleNoteSubmit(async (values) => {
+  const currentPatientId = patientId.value;
+  if (!currentPatientId) {
+    alert('Patient ID is missing.');
+    return;
   }
-
   isSubmittingNote.value = true;
-
   try {
-    const numericPatientId = parseInt(currentPatientId, 10)
+    const numericPatientId = parseInt(currentPatientId, 10);
     if (isNaN(numericPatientId)) {
-        alert('Invalid Patient ID.')
-        isSubmittingNote.value = false;
-        return
+        alert('Invalid Patient ID.');
+        return;
     }
-
-    const success = await noteStore.createNote(numericPatientId, content)
+    const success = await noteStore.createNote(numericPatientId, values.newNoteContent);
     if (success) {
-      newNoteContent.value = ''
-      await noteStore.fetchNotesByPatientId(currentPatientId); // Immediate refresh
-
-      setTimeout(() => { // Delayed refresh for summary
+      resetNoteForm();
+      await noteStore.fetchNotesByPatientId(currentPatientId);
+      setTimeout(() => {
         const latestPatientId = patientId.value;
         if (latestPatientId) {
           noteStore.fetchNotesByPatientId(latestPatientId);
         }
       }, 5000);
-
     } else {
-      alert('Failed to save the note. Please try again.')
+      alert('Failed to save the note. Please try again.');
     }
   } catch (error) {
-    console.error("Error creating note:", error)
-    alert('An error occurred while saving the note.')
+    console.error("Error creating note:", error);
+    alert('An error occurred while saving the note.');
   } finally {
       isSubmittingNote.value = false;
   }
-}
+});
 </script>
 
 <style scoped>
