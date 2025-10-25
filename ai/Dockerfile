@@ -6,7 +6,7 @@ FROM python:3.10-slim
 WORKDIR /app
 
 # Copy just the requirements file first to leverage caching
-COPY requirements.txt .
+COPY ai/requirements.txt .
 
 # Install the dependencies (this may take a few minutes)
 RUN pip install --no-cache-dir -r requirements.txt
