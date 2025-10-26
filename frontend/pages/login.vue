@@ -1,7 +1,7 @@
 <template>
   <div class="w-full max-w-sm">
     <Card class="p-8">
-      <form @submit="handleLogin">
+      <form @submit.prevent="handleLogin" class="mb-6">
         <div class="mb-4">
           <label for="email" class="form-label">Email</label>
           <input
@@ -31,16 +31,42 @@
 
         <p v-if="loginError" class="form-error-message mb-4 text-center">{{ loginError }}</p>
 
-        <div class="flex items-center justify-between">
+        <div class="mb-4">
           <button
             type="submit"
             class="btn-primary"
-          >
-            Sign In
-          </button>
+            :disabled="isLoggingIn"
+          >{{ isLoggingIn ? 'Signing In...' : 'Sign In' }}</button>
         </div>
       </form>
-    </Card>
+
+      <hr class="my-6 border-soft dark:border-dark-soft"/>
+
+      <div>
+        <h3 class="text-center text-sm font-semibold mb-2 text-soft dark:text-dark-soft">For Demo Purposes</h3>
+        <button
+          @click="handleSeedData"
+          class="w-full bg-secondary dark:bg-dark-secondary hover:bg-opacity-80 text-soft dark:text-dark-soft border border-soft dark:border-dark-soft text-sm py-2 px-4 rounded focus:outline-none transition-colors duration-200"
+          :disabled="isSeeding"
+        >
+          {{ isSeeding ? 'Seeding...' : 'Seed Demo Data' }}
+        </button>
+        <p class="mt-2 text-xs text-center text-soft dark:text-dark-soft px-2">
+          Clicking this button will **delete all existing data** (users, patients, notes) and create a fresh set of demo data, including the `test@example.com` user.
+        </p>
+        <p v-if="seedMessage" class="mt-2 text-xs text-center" :class="seedError ? 'text-red-500 dark:text-red-400' : 'text-green-600 dark:text-green-400'">
+          {{ seedMessage }}
+        </p>
+        <div v-if="seedSummary" class="mt-2 text-xs text-center text-soft dark:text-dark-soft">
+          <p>Created:</p>
+          <ul class="list-disc list-inside ml-4 text-left">
+            <li>Users: {{ seedSummary.users }}</li>
+            <li>Patients: {{ seedSummary.patients }}</li>
+            <li>Notes: {{ seedSummary.notes }}</li>
+          </ul>
+        </div>
+      </div>
+      </Card>
   </div>
 </template>
 
@@ -50,58 +76,87 @@ import { useRouter } from '#imports';
 import { useAuthStore } from '~/stores/auth';
 import Card from '~/components/Card.vue';
 import { useForm } from 'vee-validate';
-import * as zod from 'zod'; // Import Zod
-import { toTypedSchema } from '@vee-validate/zod'; // Zod adapter
+import * as zod from 'zod';
+import { toTypedSchema } from '@vee-validate/zod';
 
-// --- DEFINE VALIDATION SCHEMA ---
+// Validation Schema
 const validationSchema = toTypedSchema(
   zod.object({
     email: zod.string().min(1, 'Email is required').email('Must be a valid email'),
     password: zod.string().min(1, 'Password is required').min(8, 'Password must be at least 8 characters'),
   })
 );
-// --- SETUP VEE-VALIDATE FORM ---
+// Vee-Validate Form Setup
 const { handleSubmit, errors, defineField } = useForm({
   validationSchema,
 });
-
-// Use defineField for email and password refs
 const [email, emailAttrs] = defineField('email');
 const [password, passwordAttrs] = defineField('password');
 
+// State
 const authStore = useAuthStore();
 const router = useRouter();
-const loginError = ref<string | null>(null); // For backend login errors
+const isLoggingIn = ref(false);
+const loginError = ref<string | null>(null);
+const isSeeding = ref(false);
+const seedMessage = ref<string | null>(null);
+const seedError = ref(false);
+const seedSummary = ref<{ users: number; patients: number; notes: number } | null>(null);
 
-// --- UPDATED handleLogin ---
+// Login Handler
 const handleLogin = handleSubmit(async (values) => {
-
-  loginError.value = null; // Clear previous general error
-
-  let result: { success: boolean; message: string | null };
-
+  isLoggingIn.value = true;
+  loginError.value = null;
   try {
-    result = await authStore.login(values.email, values.password); // Call store action
-
+    const result = await authStore.login(values.email, values.password);
     if (result.success) {
-      router.push('/'); // Redirect on success
+      router.push('/');
     } else {
-      // Handle login failure reported by the store
-      console.error("Login attempt failed:", result.message);
       loginError.value = result.message || 'An unknown error occurred.';
-      console.log('loginError ref was set to:', loginError.value); // Log state update
     }
   } catch (error) {
-    // Catch unexpected errors during the login process
     console.error("Error during login process:", error);
     loginError.value = 'An unexpected error occurred during login.';
-     console.log('loginError ref was set after catch:', loginError.value); // Log state update
+  } finally {
+    isLoggingIn.value = false;
   }
 });
-// --- END UPDATE ---
 
-// Clears the general login error message when user types
+// Clear Login Error
 const clearLoginError = () => {
   loginError.value = null;
 }
+
+// Seed Data Handler
+const handleSeedData = async () => {
+  isSeeding.value = true;
+  seedMessage.value = null;
+  seedError.value = false;
+  seedSummary.value = null;
+
+  try {
+    const response = await fetch('/api/v1/debug/seed-data', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    });
+
+    const data = await response.json();
+
+    if (response.ok && data.status === 'success' && data.summary && data.summary.created) {
+      seedMessage.value = 'Demo data seeded successfully!';
+      seedSummary.value = data.summary.created;
+      seedError.value = false;
+       setTimeout(() => { seedMessage.value = null; }, 5000);
+    } else {
+        const errorMessage = data.detail || data.summary?.error || 'Failed to seed data or parse summary.';
+        throw new Error(errorMessage);
+    }
+  } catch (error) {
+    console.error("Error seeding data:", error);
+    seedMessage.value = error instanceof Error ? error.message : 'An unexpected error occurred during seeding.';
+    seedError.value = true;
+  } finally {
+    isSeeding.value = false;
+  }
+};
 </script>

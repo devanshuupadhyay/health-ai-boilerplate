@@ -77,3 +77,10 @@ body {
    /* Style for error messages */
   @apply text-red-500 dark:text-red-400 text-xs italic mt-1;
 }
+
+/* ----------------------------------
+ * 5. General Utility Styles (Added from [id].vue)
+ * ---------------------------------- */
+.whitespace-pre-wrap {
+  white-space: pre-wrap; /* Preserve whitespace and wrap text */
+}

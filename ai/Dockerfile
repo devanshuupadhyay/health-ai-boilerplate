@@ -6,7 +6,10 @@ FROM python:3.10-slim
 WORKDIR /app
 
 # Copy just the requirements file first to leverage caching
-COPY ai/requirements.txt .
+COPY requirements.txt .
+
+# Upgrade pip first to resolve hash mismatch and dependency issues
+RUN pip install --upgrade pip
 
 # Install the dependencies (this may take a few minutes)
 RUN pip install --no-cache-dir -r requirements.txt

@@ -31,6 +31,13 @@ services:
       - redis
     # Logging handled by Promtail
 
+  ai:
+      build: ./ai
+      volumes:
+        - ./ai:/app
+      ports:
+        - "8001:8001"
+    # Logging handled by Promtail (optional)
   celery_worker:
     build: ./backend
     command: celery -A celery_worker.celery worker --loglevel=info
@@ -44,15 +51,9 @@ services:
     depends_on:
       - backend
       - redis
+      - ai
     # Logging handled by Promtail
 
-  ai:
-    build: ./ai
-    volumes:
-      - ./ai:/app
-    ports:
-      - "8001:8001"
-    # Logging handled by Promtail (optional)
 
   search:
     image: getmeili/meilisearch:v1.3

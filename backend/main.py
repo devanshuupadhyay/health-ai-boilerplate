@@ -1,9 +1,12 @@
 # path: backend/main.py
 
 # Imports
-from fastapi import FastAPI
+from fastapi import FastAPI, status, Depends, HTTPException
+from sqlalchemy.orm import Session
 from app.core.logging_config import configure_logging, get_logger
 from app.api.v1 import users, auth, patients, notes
+from app.api import deps
+import seed
 
 # from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 # --- ADD SENTRY IMPORTS ---
@@ -75,6 +78,32 @@ def debug_config():
 
     log.info("Debug config endpoint called")
     return {"database_url": settings.DATABASE_URL}
+
+
+@app.post("/api/v1/debug/seed-data", status_code=status.HTTP_200_OK, tags=["debug"])
+def run_seed_data(
+    db: Session = Depends(deps.get_db),
+):  # db dependency is kept for consistency but not directly used by seed_data()
+    """
+    Executes the database seeding script with more comprehensive data.
+    **Warning:** Modifies the database. Intended for development/demo.
+    Returns a summary of created items.
+    """
+    log.info("Seed data endpoint called.")
+    try:
+        # seed.seed_data manages its own session
+        summary = seed.seed_data()
+        if "error" in summary:
+            raise HTTPException(
+                status_code=500, detail=f"Seeding failed: {summary['error']}"
+            )
+        log.info(f"Seeding completed successfully: {summary}")
+        return {"status": "success", "summary": summary}
+    except Exception as e:
+        log.error(f"Error executing seed data endpoint: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500, detail=f"Internal server error during seeding: {str(e)}"
+        )
 
 
 # --- Include routers ---

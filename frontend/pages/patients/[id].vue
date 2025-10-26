@@ -16,8 +16,10 @@
       </div>
     </Card>
      <div v-else-if="isLoadingPatient" class="text-center p-8">
-       <p class="text-soft dark:text-dark-soft">Loading patient details...</p> </div>
-      <div v-else class="text-center p-8 form-error-message"> <p>Could not load patient details.</p>
+       <p class="text-soft dark:text-dark-soft">Loading patient details...</p>
+     </div>
+     <div v-else class="text-center p-8 form-error-message">
+       <p>Could not load patient details.</p>
      </div>
 
     <Card class="p-6 md:p-8">
@@ -40,21 +42,28 @@
       </form>
 
       <div v-if="isLoadingNotes" class="text-center">
-        <p class="text-soft dark:text-dark-soft">Loading notes...</p> </div>
+        <p class="text-soft dark:text-dark-soft">Loading notes...</p>
+      </div>
       <ul v-else-if="noteStore.notes.length > 0" class="space-y-4">
         <li v-for="note in noteStore.notes" :key="note.id">
            <div class="p-4 bg-primary dark:bg-dark-primary rounded-lg shadow">
             <p class="text-text dark:text-dark-text mb-2 whitespace-pre-wrap">{{ note.content }}</p>
 
-            <div v-if="note.summary" class="mt-2 pt-2 border-t border-soft/50 dark:border-dark-soft/50"> <p class="text-sm text-soft dark:text-dark-soft italic"> <strong>AI Summary:</strong> {{ note.summary }}
-              </p>
-            </div><div v-else class="mt-2 pt-2 border-t border-soft/50 dark:border-dark-soft/50"> <p class="text-sm text-soft dark:text-dark-soft italic"> Summary is being generated...
-              </p>
+            <div v-if="note.summary" class="mt-2 pt-2 border-t border-soft/50 dark:border-dark-soft/50">
+                <p class="text-sm text-soft dark:text-dark-soft italic">
+                    <strong>AI Summary:</strong> {{ note.summary }}
+                </p>
+            </div>
+            <div v-else class="mt-2 pt-2 border-t border-soft/50 dark:border-dark-soft/50">
+                <p class="text-sm text-soft dark:text-dark-soft italic">
+                    Summary is being generated...
+                </p>
             </div>
           </div>
         </li>
       </ul>
-      <p v-else class="text-soft dark:text-dark-soft">No clinical notes found for this patient.</p> </Card>
+      <p v-else class="text-soft dark:text-dark-soft">No clinical notes found for this patient.</p>
+    </Card>
   </div>
 </template>
 
@@ -62,7 +71,7 @@
 import { useRoute } from 'vue-router';
 import { usePatientStore } from '~/stores/patients';
 import { useNoteStore } from '~/stores/notes';
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, onUnmounted } from 'vue'; // <-- Import onUnmounted
 import Card from '~/components/Card.vue';
 import { useForm } from 'vee-validate';
 import * as zod from 'zod';
@@ -79,6 +88,7 @@ const noteStore = useNoteStore();
 const isLoadingPatient = ref(true);
 const isLoadingNotes = ref(true);
 const isSubmittingNote = ref(false);
+const pollingIntervalId = ref<NodeJS.Timeout | null>(null); // <-- Ref to store interval ID
 
 const patientId = computed(() => {
   const idParam = route.params.id;
@@ -106,15 +116,15 @@ onMounted(async () => {
         isLoadingPatient.value = true;
         isLoadingNotes.value = true;
         try {
-        await Promise.all([
-            patientStore.fetchPatientById(currentPatientId),
-            noteStore.fetchNotesByPatientId(currentPatientId)
-        ]);
+            await Promise.all([
+                patientStore.fetchPatientById(currentPatientId),
+                noteStore.fetchNotesByPatientId(currentPatientId)
+            ]);
         } catch (error) {
-        console.error("Error fetching patient details or notes:", error);
+            console.error("Error fetching patient details or notes:", error);
         } finally {
-        isLoadingPatient.value = false;
-        isLoadingNotes.value = false;
+            isLoadingPatient.value = false;
+            isLoadingNotes.value = false;
         }
     } else {
         isLoadingPatient.value = false;
@@ -122,6 +132,15 @@ onMounted(async () => {
         console.error("Patient ID is missing from the route.");
     }
 });
+
+// --- Lifecycle hook to clear interval when component is unmounted ---
+onUnmounted(() => {
+    if (pollingIntervalId.value) {
+        clearInterval(pollingIntervalId.value);
+        console.log("Polling stopped on component unmount.");
+    }
+});
+// --- End lifecycle hook ---
 
 const patientName = computed(() => {
     const patient = patientStore.currentPatient
@@ -132,38 +151,85 @@ const patientName = computed(() => {
 });
 
 const handleCreateNote = handleNoteSubmit(async (values) => {
-  const currentPatientId = patientId.value;
-  if (!currentPatientId) {
-    alert('Patient ID is missing.');
-    return;
-  }
-  isSubmittingNote.value = true;
-  try {
-    const numericPatientId = parseInt(currentPatientId, 10);
-    if (isNaN(numericPatientId)) {
-        alert('Invalid Patient ID.');
+    const currentPatientId = patientId.value;
+    if (!currentPatientId) {
+        alert('Patient ID is missing.');
         return;
     }
-    const success = await noteStore.createNote(numericPatientId, values.newNoteContent);
-    if (success) {
-      resetNoteForm();
-      await noteStore.fetchNotesByPatientId(currentPatientId);
-      setTimeout(() => {
-        const latestPatientId = patientId.value;
-        if (latestPatientId) {
-          noteStore.fetchNotesByPatientId(latestPatientId);
+    isSubmittingNote.value = true;
+    try {
+        const numericPatientId = parseInt(currentPatientId, 10);
+        if (isNaN(numericPatientId)) {
+            alert('Invalid Patient ID.');
+            return;
         }
-      }, 5000);
-    } else {
-      alert('Failed to save the note. Please try again.');
+        // --- Call createNote ---
+        const success = await noteStore.createNote(numericPatientId, values.newNoteContent);
+
+        if (success) {
+            resetNoteForm();
+            // Fetch notes immediately to show the new note without summary
+            await noteStore.fetchNotesByPatientId(currentPatientId);
+
+            // --- Find the new note ID (assuming it's the latest/first) ---
+            // Ensure notes array is sorted descending by ID in the store if necessary
+            const newNote = noteStore.notes.length > 0 ? noteStore.notes[0] : null;
+            const newNoteId = newNote?.id;
+
+            // --- Start Polling for the summary of the new note ---
+            if (newNoteId) {
+                pollForSummary(currentPatientId, newNoteId);
+            } else {
+                console.warn("Could not determine new note ID to start polling.");
+            }
+            // --- End Polling Start ---
+
+        } else {
+            alert('Failed to save the note. Please try again.');
+        }
+    } catch (error) {
+        console.error("Error creating note:", error);
+        alert('An error occurred while saving the note.');
+    } finally {
+        isSubmittingNote.value = false;
     }
-  } catch (error) {
-    console.error("Error creating note:", error);
-    alert('An error occurred while saving the note.');
-  } finally {
-      isSubmittingNote.value = false;
-  }
 });
+
+// --- Polling Function ---
+
+const pollForSummary = (patientIdValue: string, noteIdToCheck: number, interval = 2500, maxAttempts = 30) => { // <-- CHANGED DEFAULTS
+    let attempts = 0;
+
+    // Clear any existing interval before starting a new one
+    if (pollingIntervalId.value) {
+        clearInterval(pollingIntervalId.value);
+    }
+
+    pollingIntervalId.value = setInterval(async () => {
+        attempts++;
+        console.log(`Polling for summary (Note ID: ${noteIdToCheck}) - Attempt ${attempts}...`);
+
+        // Fetch notes without setting loading state to avoid UI flicker
+        await noteStore.fetchNotesByPatientId(patientIdValue);
+
+        const targetNote = noteStore.notes.find(note => note.id === noteIdToCheck);
+
+        // Check if summary exists or max attempts reached
+        if (targetNote?.summary || attempts >= maxAttempts) {
+            if (pollingIntervalId.value) {
+                clearInterval(pollingIntervalId.value);
+                pollingIntervalId.value = null; // Clear the ref
+            }
+            if (!targetNote?.summary && attempts >= maxAttempts) {
+                console.warn(`Polling stopped after ${attempts} attempts (max ${maxAttempts}), summary not found for note ${noteIdToCheck}.`);
+            } else {
+                 console.log(`Summary found for note ${noteIdToCheck}! Polling stopped.`);
+            }
+        }
+    }, interval); // Use the interval parameter here
+};
+// --- End Polling Function ---
+
 </script>
 
 <style scoped>

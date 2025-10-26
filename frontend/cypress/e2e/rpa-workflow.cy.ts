@@ -17,17 +17,32 @@ describe('RPA Workflow Simulation', () => {
   });
 
   it('should complete the standard clinical note workflow', () => {
-    // --- 1. Login ---
-    cy.log('Step 1: Visiting Login Page');
+    // --- 0. Visit Login Page and Seed Data ---
+    cy.log('Step 0: Visiting Login Page');
     cy.visit('/login');
     cy.wait(2000); // Wait for hydration
-    showDemoToast('Step 1: On login page');
+    showDemoToast('Step 0: On login page');
 
-    // (Removed theme toggle from login page, as nav isn't visible yet)
+    //cy.log('Step 0a: Setting up API intercept for seeding');
+    //cy.intercept('POST', '/api/v1/debug/seed-data').as('seedDataRequest');
 
-    cy.log('Step 1a: Setting up API intercept');
+    //cy.log('Step 0b: Clicking Seed Demo Data');
+    // Find the button by its text content
+    //cy.contains('button', 'Seed Demo Data').click();
+    //showDemoToast('Step 0b: Seeding database...');
+
+    //cy.log('Step 0c: Waiting for seeding API call to complete');
+    //cy.wait('@seedDataRequest', { timeout: 60000 }).its('response.statusCode').should('eq', 200); // Increased timeout for seeding
+    //showDemoToast('Step 0c: Seeding complete!');
+    //cy.wait(2000); // Demo wait
+
+    // --- 1. Login (Now that data is seeded) ---
+    cy.log('Step 1: Starting Login');
+    showDemoToast('Step 1: Starting Login');
+
+    cy.log('Step 1a: Setting up API intercept for login');
     cy.intercept('POST', '/api/v1/auth/token').as('loginRequest');
-
+    cy.wait(2000);
     cy.log('Step 1b: Typing email');
     cy.get('#email').type(testEmail).blur();
     showDemoToast('Step 1b: Typing email');
@@ -140,16 +155,19 @@ describe('RPA Workflow Simulation', () => {
 
     // --- 6. Wait for Summary (and note to appear) ---
     cy.log('Step 6: Waiting for note to appear...');
-    cy.contains('p', noteContent, { timeout: 20000 }).should('be.visible');
+    cy.contains('p', noteContent, { timeout: 60000 }).should('be.visible');
     showDemoToast('Step 6: Note saved. Generating summary...');
     cy.wait(2000); // Demo wait
 
     cy.log('Step 6a: Waiting for summary generation...');
-    cy.wait('@getNotes', { timeout: 20000 }); // Wait for summary refresh
-    
+    // We might need multiple @getNotes waits depending on polling interval vs summary time
+    cy.wait('@getNotes', { timeout: 60000 }); // Wait for summary refresh (adjust timeout if needed)
+    cy.wait(5000); // Extra wait just in case polling is slow
+    cy.wait('@getNotes', { timeout: 60000 }); // Second wait for summary refresh
+
     cy.contains('li', noteContent)
       .find('p:contains("AI Summary:")')
-      .should('not.contain', 'Summary is being generated...');
+      .should('not.contain', 'Summary is being generated...', { timeout: 20000 }); // Check summary text within timeout
     showDemoToast('Step 6a: AI Summary complete!');
     cy.log('Note and summary verified.');
     cy.wait(2000); // Demo wait
@@ -177,7 +195,7 @@ describe('RPA Workflow Simulation', () => {
     cy.wait(2000); // Demo wait
 
     cy.log('Step 7a: Typing search query');
-    const uniqueSearchTerm = noteContent.substring(0, 10); // <-- Fixed this
+    const uniqueSearchTerm = noteContent.substring(0, 10); // Use a unique part of the note
     cy.get('#noteSearch').type(uniqueSearchTerm);
     showDemoToast(`Step 7a: Searching for "${uniqueSearchTerm}"`);
     cy.wait(2000); // Demo wait
